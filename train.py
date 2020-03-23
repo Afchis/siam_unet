@@ -13,7 +13,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
 iter = 0
-for epoch in range(2):
+for epoch in range(15):
 	print('*'*10, 'epoch: ', epoch, '*'*10)
 	for i, data in enumerate(train_loader):
 		target, search, label, depth = data

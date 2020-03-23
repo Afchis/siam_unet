@@ -8,9 +8,9 @@ from model_unet_paths import *
 
 
 # SearchModel
-class SearchModel(nn.Module):
-	def __init__(self, input_search=SEARCH_SIZE):
-		super(SearchModel, self).__init__()
+class BackboneUNet(nn.Module):
+	def __init__(self, input_search):
+		super(BackboneUNet, self).__init__()
 		self.model = UNetDesigner(input_search)
 		self.model.load_state_dict(torch.load('weights/weights.pth'))
 		self.adjust = nn.Conv2d(1024, 256, kernel_size=1) 
@@ -19,20 +19,6 @@ class SearchModel(nn.Module):
 		search_cat = self.model(x)
 		out = self.adjust(search_cat[4])
 		return search_cat, out
-
-
-# TargetModel
-class TargetModel(nn.Module):
-	def __init__(self, input_target=TARGET_SIZE):
-		super(TargetModel, self).__init__()
-		self.model = UNetDesigner(input_target)
-		self.model.load_state_dict(torch.load('weights/weights.pth'))
-		self.adjust = nn.Conv2d(1024, 256, kernel_size=1) 
-
-	def forward(self, x):
-		_, _, _, _, out = self.model(x)
-		out = self.adjust(out)
-		return out
 
 
 # ScoreBranch
@@ -75,8 +61,8 @@ class MaskBranch(nn.Module):
 class HeadModel(nn.Module):
 	def __init__(self):
 		super(HeadModel, self).__init__()
-		self.search = SearchModel()
-		self.target = TargetModel()
+		self.search = BackboneUNet(SEARCH_SIZE)
+		self.target = BackboneUNet(TARGET_SIZE)
 		self.mask_branch = MaskBranch()
 		self.score_branch = ScoreBranch()
 		self.up_and_cat = UpAndCat()
@@ -111,7 +97,7 @@ class HeadModel(nn.Module):
 		    permute for time sequence: (batch, time, channels, input_size, input_size) -->(batch*time, channels, input_size, input_size)
 		'''
 		search_cats, search = self.search(search)
-		target = self.target(target)
+		_, target = self.target(target)
 		corr_feat = self.Correlation_func(search, target)
 		pos = self.score_branch(corr_feat)
 		#### mask_branch
