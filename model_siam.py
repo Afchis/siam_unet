@@ -26,17 +26,20 @@ class ScoreBranch(nn.Module):
 	def __init__(self):
 		super(ScoreBranch, self).__init__()
 		self.branch = nn.Sequential(
-			# nn.Conv2d(256, 256, 1), 
-			# nn.ReLU(),  
-			nn.Conv2d(256, 1, 1), 
-			nn.ReLU(),
+			nn.Conv2d(256, 1024, 1), 
+			nn.ReLU(),  
+			nn.Conv2d(1024, 2, 1), 
+			nn.Sigmoid(),
 		)
 
 	def forward(self, x):
-		out = x.sum(dim=1)
-		max_value = out.max()
-		pos = (out == max_value).nonzero().squeeze()
-		return pos
+		score = self.branch(x)
+		max_value = score[0][1].max()
+		pos = (score == max_value).nonzero()[0][2:]
+		# print('*'*30)
+		# print('pos:', pos.shape)
+		# print('*'*30)
+		return score, pos
 
 
 # MaskBranch
@@ -99,12 +102,10 @@ class HeadModel(nn.Module):
 		search_cats, search = self.search(search)
 		_, target = self.target(target)
 		corr_feat = self.Correlation_func(search, target)
-		pos = self.score_branch(corr_feat)
-		#### mask_branch
+		score, pos = self.score_branch(corr_feat)
+
 		corr_feat = corr_feat.permute(2, 3, 0, 1)
-		# print('pos: ', pos[1], pos[2])
-		out = corr_feat[pos[1]][pos[2]]
-		# print('out.shape: ', out.shape)
+		out = corr_feat[pos[0]][pos[1]]
 		out = self.mask_branch(out)
 
 		out = self.up_and_cat(out, search_cats[3])
@@ -121,7 +122,7 @@ class HeadModel(nn.Module):
 
 		out = self.final(out)
 
-		return out
+		return score, out
 
 
 if __name__ == '__main__': 

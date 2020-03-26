@@ -20,6 +20,6 @@ def save_img(object, i):
 
 
 for i, data in enumerate(train_loader):
-	target, search, label, depth = data
-	pred_mask = model(search, target)
+	target, search, label, depth, score_label = data
+	pred_score, pred_mask = model(search, target)
 	save_img(pred_mask, i)

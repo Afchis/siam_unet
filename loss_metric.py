@@ -1,5 +1,7 @@
 import torch
 
+
+########## Mask losses: ##########
 def l2_loss(x, y, d):
     y = y.reshape(-1, NUM_CLASSES, INPUT_SIZE, INPUT_SIZE)
     d = d.reshape(-1, 1, INPUT_SIZE, INPUT_SIZE)
@@ -29,3 +31,15 @@ def dice_combo_loss(x, y, d, bce_weight=0.5):
 def l2_combo_loss(x, y, d):
     l2_combo_loss = l2_loss(x, y, d) * bce_loss(x, y, d)
     return l2_combo_loss
+
+
+########## Score losses: ##########
+def score_loss(xx, yy):
+    bce_loss =  torch.nn.BCELoss()
+    return  bce_loss(xx, yy)
+
+
+########## All losses: ##########
+def all_losses(x, y, d, xx, yy, score_weight=0.5):
+    all_losses = score_weight * dice_loss(x, y, d) + score_weight * score_loss(xx, yy)
+    return  all_losses
